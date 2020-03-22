@@ -64,6 +64,7 @@ class TypingSpeedTest:
             else:
                 result += chr(ch)
                 if not word.startswith(result):
+                    curses.beep()
                     stdscr.attron(curses.color_pair(1))
                 stdscr.addch(
                     INPUT_ROW, len(f"{word} > ") + len(result) - 1, ch
