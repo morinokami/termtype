@@ -63,9 +63,13 @@ class TypingSpeedTest:
                 stdscr.delch(INPUT_ROW, len(f"{word} > ") + len(result))
             else:
                 result += chr(ch)
+                if not word.startswith(result):
+                    stdscr.attron(curses.color_pair(1))
                 stdscr.addch(
                     INPUT_ROW, len(f"{word} > ") + len(result) - 1, ch
                 )
+                if not word.startswith(result):
+                    stdscr.attroff(curses.color_pair(1))
             stdscr.refresh()
             elapsed = time.time() - start
             timeout -= elapsed
@@ -91,6 +95,9 @@ class TypingSpeedTest:
         )
 
     def main(self, stdscr: Window) -> None:
+        curses.start_color()
+        curses.init_pair(1, curses.COLOR_RED, curses.COLOR_WHITE)
+
         while self.continue_test():
             stdscr.clear()
             self.show_result(stdscr)
