@@ -22,27 +22,23 @@ TEST_LENGTH = 20
 
 @dataclasses.dataclass
 class Result:
-    count: int = 0
     correct_words: List[str] = None
     duration: float = 0
 
-    def update(self, word: str, input: str, duration: float) -> None:
-        self.count += 1
-        if word == input:
-            if self.correct_words is None:
-                self.correct_words = []
-            self.correct_words.append(word)
+    def update(self, word: str, duration: float) -> None:
+        if self.correct_words is None:
+            self.correct_words = []
+        self.correct_words.append(word)
         self.duration += duration
 
-    def get(self) -> Tuple[float, float, float]:
-        if self.count == 0:
-            return 0, 0, 0
+    def get(self) -> Tuple[float, float]:
+        if self.duration == 0:
+            return 0, 0
 
         cpm = (len("".join(self.correct_words)) / self.duration) * 60
         wpm = (len(self.correct_words) / self.duration) * 60
-        accuracy = len(self.correct_words) / self.count
 
-        return cpm, wpm, accuracy
+        return cpm, wpm
 
 
 class TypingSpeedTest:
@@ -58,7 +54,7 @@ class TypingSpeedTest:
 
         result = ""
         ch = 0
-        while ch not in (curses.KEY_ENTER, 10, 13):
+        while True:
             start = time.time()
             curses.halfdelay(int(timeout * 10))
             ch = stdscr.getch()
@@ -74,7 +70,8 @@ class TypingSpeedTest:
             elapsed = time.time() - start
             timeout -= elapsed
 
-        return result[:-1]
+            if result == word:
+                return
 
     def continue_test(self) -> bool:
         return self.result.duration < TEST_LENGTH
@@ -82,19 +79,15 @@ class TypingSpeedTest:
     def test(self, stdscr) -> None:
         start = time.time()
         word = self.words.pop()
-        input = self.get_input(
-            word, TEST_LENGTH - self.result.duration, stdscr
-        )
+        self.get_input(word, TEST_LENGTH - self.result.duration, stdscr)
         duration = time.time() - start
-        self.result.update(word, input, duration)
+        self.result.update(word, duration)
 
     def show_result(self, stdscr: Window) -> None:
-        cpm, wpm, accuracy = self.result.get()
+        cpm, wpm = self.result.get()
 
         stdscr.addstr(
-            RESULT_ROW,
-            0,
-            f"cpm: {cpm:03.1f}, wpm: {wpm:.1f}, accuracy: {accuracy:.1%}",
+            RESULT_ROW, 0, f"cpm: {cpm:03.1f}, wpm: {wpm:.1f}",
         )
 
     def main(self, stdscr: Window) -> None:
